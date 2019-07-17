@@ -6,7 +6,7 @@ use git2::DiffDelta;
 
 fn main() {
     let repo = Repository::open(".").expect("Repository not found");
-    let diff: Diff = repo.revparse_single("HEAD^{tree}")
+    let diff: Diff = repo.revparse_single("HEAD~1^{tree}")
         .and_then(|rev: Object| rev.peel_to_tree())
         .and_then(|tree: Tree| repo.diff_tree_to_workdir_with_index(Some(&tree), None))
         .expect("Creating diff from tree to working dir not possible");
