@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::path::Path;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct Sticker {
     file: String,
     emoji: String,
@@ -23,12 +23,12 @@ fn file_is_png(file: DiffFile) -> bool {
 
 //TODO: This is quite Broken
 fn resolve_sticker_for_image(path: &Path, stickers_obj: &Stickers) -> Option<Sticker> {
-    for sticker in stickers_obj.stickers {
+    for sticker in &stickers_obj.stickers {
         if path
             .file_name()
             .map_or(false, |name: &OsStr| name.eq(sticker.file.as_str()))
         {
-            return Some(sticker);
+            return Some(sticker.clone());
         }
     }
 
@@ -48,14 +48,16 @@ fn main() {
         .deltas()
         .filter(|delta: &DiffDelta| file_is_png(delta.new_file()));
 
-    let file: File = File::open("stickers.json")
-        .expect("Could not open File stickers.json");
-    let stickers: Stickers = serde_json::from_reader(file)
-        .expect("Could not parse File stickers.json");
+    let file: File = File::open("stickers.json").expect("Could not open File stickers.json");
+    let stickers: Stickers =
+        serde_json::from_reader(file).expect("Could not parse File stickers.json");
 
     for png in pngs {
         if png.status() == Delta::Added {
-            let filePath: &Path = png.new_file().path().expect("Could not get File Path from Diff");
+            let filePath: &Path = png
+                .new_file()
+                .path()
+                .expect("Could not get File Path from Diff");
 
             resolve_sticker_for_image(filePath, &stickers);
         }
