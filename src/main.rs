@@ -1,18 +1,19 @@
-use git2::{Delta, Diff, DiffDelta, DiffFile, Object, Repository, Tree};
+use git2::{Delta, Diff, DiffDelta, DiffFile, Error as GitError, Repository};
 use serde::Deserialize;
+use serde_json::error::Error as JsonError;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::path::Path;
 
 #[derive(Deserialize, Clone)]
-struct Sticker {
+struct StickerObj {
     file: String,
     emoji: String,
 }
 
 #[derive(Deserialize)]
-struct Stickers {
-    stickers: Vec<Sticker>,
+struct StickersObj {
+    stickers: Vec<StickerObj>,
 }
 
 fn file_is_png(file: DiffFile) -> bool {
@@ -21,8 +22,7 @@ fn file_is_png(file: DiffFile) -> bool {
     })
 }
 
-//TODO: This is quite Broken
-fn resolve_sticker_for_image(path: &Path, stickers_obj: &Stickers) -> Option<Sticker> {
+fn resolve_sticker_for_image(path: &Path, stickers_obj: &StickersObj) -> Option<StickerObj> {
     for sticker in &stickers_obj.stickers {
         if path
             .file_name()
@@ -35,31 +35,31 @@ fn resolve_sticker_for_image(path: &Path, stickers_obj: &Stickers) -> Option<Sti
     None
 }
 
-fn main() {
-    let repo = Repository::open(".").expect("Repository not found");
+fn parse_diff_from_repo(repo: &Repository) -> Result<Diff, GitError> {
+    let tree = repo.revparse_single("HEAD~1^{tree}")?.peel_to_tree()?;
+    repo.diff_tree_to_workdir_with_index(Some(&tree), None)
+}
 
-    let diff: Diff = repo
-        .revparse_single("HEAD~1^{tree}")
-        .and_then(|rev: Object| rev.peel_to_tree())
-        .and_then(|tree: Tree| repo.diff_tree_to_workdir_with_index(Some(&tree), None))
-        .expect("Creating diff from tree to working dir not possible");
+fn parse_sticker_json() -> Result<StickersObj, JsonError> {
+    let sticker_file: File = File::open("stickers.json").unwrap();
+    serde_json::from_reader(sticker_file)
+}
+
+fn main() {
+    let repo = Repository::open(".").unwrap();
+
+    let diff: Diff = parse_diff_from_repo(&repo).unwrap();
+
+    let stickers: StickersObj = parse_sticker_json().unwrap();
 
     let pngs = diff
         .deltas()
         .filter(|delta: &DiffDelta| file_is_png(delta.new_file()));
 
-    let file: File = File::open("stickers.json").expect("Could not open File stickers.json");
-    let stickers: Stickers =
-        serde_json::from_reader(file).expect("Could not parse File stickers.json");
-
     for png in pngs {
         if png.status() == Delta::Added {
-            let filePath: &Path = png
-                .new_file()
-                .path()
-                .expect("Could not get File Path from Diff");
-
-            resolve_sticker_for_image(filePath, &stickers);
+            let file_path: &Path = png.new_file().path().unwrap();
+            let sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
         }
     }
 }
