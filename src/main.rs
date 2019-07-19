@@ -1,9 +1,13 @@
 use git2::{Delta, Diff, DiffDelta, DiffFile, Error as GitError, Repository};
 use serde::Deserialize;
 use serde_json::error::Error as JsonError;
+use std::env;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::path::Path;
+mod telegram_api;
+extern crate dotenv;
+use dotenv::dotenv;
 
 #[derive(Deserialize, Clone)]
 struct StickerObj {
@@ -46,6 +50,14 @@ fn parse_sticker_json() -> Result<StickersObj, JsonError> {
 }
 
 fn main() {
+    dotenv().ok();
+    let test: telegram_api::TelegramBot =
+        telegram_api::TelegramBot::new(&env::var("BOT_TOKEN").unwrap());
+
+    let test1 = test.get_sticker_pack("HPKaddi");
+
+    print!("{:?}", test1);
+
     let repo = Repository::open(".").unwrap();
 
     let diff: Diff = parse_diff_from_repo(&repo).unwrap();

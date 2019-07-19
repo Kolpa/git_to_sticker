@@ -10,3 +10,5 @@ edition = "2018"
 git2 = "0.9.1"
 serde = { version = "1.0.97", features = ["derive"] }
 serde_json = "1.0.40"
+reqwest = "0.9.18"
+dotenv = "0.14.1"
