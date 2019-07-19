@@ -6,7 +6,6 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::path::Path;
 mod telegram_api;
-extern crate dotenv;
 use dotenv::dotenv;
 
 #[derive(Deserialize, Clone)]
@@ -71,7 +70,7 @@ fn main() {
     for png in pngs {
         if png.status() == Delta::Added {
             let file_path: &Path = png.new_file().path().unwrap();
-            let sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
+            let _sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
         }
     }
 }
