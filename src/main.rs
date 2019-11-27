@@ -48,12 +48,13 @@ fn parse_sticker_json() -> Result<StickersObj, JsonError> {
     serde_json::from_reader(sticker_file)
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     let test: telegram_api::TelegramBot =
         telegram_api::TelegramBot::new(&env::var("BOT_TOKEN").unwrap());
 
-    let test1 = test.get_sticker_pack("HPKaddi");
+    let test1 = test.get_sticker_pack("HPKaddi").await;
 
     print!("{:?}", test1);
 
@@ -61,7 +62,7 @@ fn main() {
 
     let diff: Diff = parse_diff_from_repo(&repo).unwrap();
 
-    let stickers: StickersObj = parse_sticker_json().unwrap();
+    //let stickers: StickersObj = parse_sticker_json().unwrap();
 
     let pngs = diff
         .deltas()
@@ -70,7 +71,8 @@ fn main() {
     for png in pngs {
         if png.status() == Delta::Added {
             let file_path: &Path = png.new_file().path().unwrap();
-            let _sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
+            println!("{:?}", file_path.to_str())
+            //let _sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
         }
     }
 }

@@ -17,31 +17,34 @@ impl TelegramBot {
         }
     }
 
-    fn call_api<T: DeserializeOwned>(&self, api_function: &str, params: Form) -> Result<T, Error> {
-        let token = self.token.clone();
+    async fn call_api<T:DeserializeOwned>(&self, api_function: &str, params: Form) -> Result<T, Error> {
+        //let token = self.token.clone();
         self.client
             .post(&format!(
                 "https://api.telegram.org/bot{}/{}",
-                token, api_function
+                self.token, api_function
             ))
             .multipart(params)
-            .send()?
+            .send()
+            .await?
             .json()
+            .await
             .map_err(|e| Error::from(e))
+            
     }
 
-    pub fn get_sticker_pack(&self, pack_name: &str) -> Result<TelResponse<StickerSet>, Error> {
+    pub async fn get_sticker_pack(&self, pack_name: &str) -> Result<TelResponse<StickerSet>, Error> {
         let form = Form::new().text("name", pack_name.to_owned());
-        self.call_api("getStickerSet", form)
+        self.call_api("getStickerSet", form).await
     }
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Sticker {
-    file_id: String,
+    pub file_id: String,
     width: i32,
     height: i32,
-    emoji: Option<String>,
+    pub emoji: Option<String>,
     set_name: Option<String>,
     file_size: Option<i32>,
 }
@@ -51,7 +54,7 @@ pub struct StickerSet {
     name: String,
     title: String,
     contains_masks: bool,
-    stickers: Vec<Sticker>,
+    pub stickers: Vec<Sticker>,
 }
 
 #[derive(Deserialize, Debug)]
