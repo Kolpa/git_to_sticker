@@ -61,12 +61,10 @@ async fn add_file_to_pack(telegram: &telegram_api::TelegramBot, sticker_obj: Sti
 async fn main() {
     dotenv().ok();
 
-    let test: telegram_api::TelegramBot =
+    let telegram_bot: telegram_api::TelegramBot =
         telegram_api::TelegramBot::new(&env::var("BOT_TOKEN").unwrap());
 
-    let test1 = test.get_sticker_pack("HPKaddi").await;
-
-    print!("{:?}", test1);
+    //let sticker_pack = telegram_bot.get_sticker_pack("HPKaddi").await;
 
     let repo = Repository::open(".").unwrap();
 
@@ -82,8 +80,7 @@ async fn main() {
         if png.status() == Delta::Added {
             let file_path: &Path = png.new_file().path().unwrap();
             let _sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
-
-            add_file_to_pack(&test, _sticker, file_path).await;
+            add_file_to_pack(&telegram_bot, _sticker, file_path).await;
         }
     }
 }

@@ -50,7 +50,6 @@ impl TelegramBot {
     ) -> Result<TelResponse<bool>, Error> {
         let file_content = tokio::fs::read(sticker_path).await.unwrap();
         let file_part = Part::bytes(file_content);
-
         let form = Form::new()
             .text("user_id", user_id.to_owned())
             .text("name", pack_name.to_owned())
