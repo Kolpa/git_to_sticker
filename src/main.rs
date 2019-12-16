@@ -48,8 +48,18 @@ fn parse_sticker_json() -> Result<StickersObj, JsonError> {
     serde_json::from_reader(sticker_file)
 }
 
+fn add_file_to_pack(telegram: &telegram_api::TelegramBot, sticker_obj: StickerObj, file_path: &Path) -> bool {
+    telegram.add_sticker_to_set(
+        &env::var("USER_ID").unwrap(),
+        &env::var("PACK_NAME").unwrap(),
+        file_path,
+        &sticker_obj.emoji
+    ).unwrap().ok
+}
+
 fn main() {
     dotenv().ok();
+
     let test: telegram_api::TelegramBot =
         telegram_api::TelegramBot::new(&env::var("BOT_TOKEN").unwrap());
 
@@ -71,6 +81,8 @@ fn main() {
         if png.status() == Delta::Added {
             let file_path: &Path = png.new_file().path().unwrap();
             let _sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
+
+            add_file_to_pack(&test, _sticker, file_path);
         }
     }
 }

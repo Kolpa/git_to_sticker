@@ -3,6 +3,7 @@ use reqwest::Client;
 use reqwest::Error;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use std::path::Path;
 
 pub struct TelegramBot {
     client: Client,
@@ -34,30 +35,46 @@ impl TelegramBot {
         let form = Form::new().text("name", pack_name.to_owned());
         self.call_api("getStickerSet", form)
     }
+
+    pub fn add_sticker_to_set(
+        &self,
+        user_id: &str,
+        pack_name: &str,
+        sticker_path: &Path,
+        emojis: &str,
+    ) -> Result<TelResponse<bool>, Error> {
+        let form = Form::new()
+            .text("user_id", user_id.to_owned())
+            .text("name", pack_name.to_owned())
+            .file("png_sticker", sticker_path)
+            .unwrap()
+            .text("emojis", emojis.to_owned());
+        self.call_api("addStickerToSet", form)
+    }
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Sticker {
-    file_id: String,
-    width: i32,
-    height: i32,
-    emoji: Option<String>,
-    set_name: Option<String>,
-    file_size: Option<i32>,
+    pub file_id: String,
+    pub width: i32,
+    pub height: i32,
+    pub emoji: Option<String>,
+    pub set_name: Option<String>,
+    pub file_size: Option<i32>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct StickerSet {
-    name: String,
-    title: String,
-    contains_masks: bool,
-    stickers: Vec<Sticker>,
+    pub name: String,
+    pub title: String,
+    pub contains_masks: bool,
+    pub stickers: Vec<Sticker>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct TelResponse<T> {
-    ok: bool,
-    result: Option<T>,
-    error_code: Option<i32>,
-    description: Option<String>,
+    pub ok: bool,
+    pub result: Option<T>,
+    pub error_code: Option<i32>,
+    pub description: Option<String>,
 }
