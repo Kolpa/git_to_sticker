@@ -1,9 +1,11 @@
 use reqwest::multipart::Form;
+use reqwest::multipart::Part;
 use reqwest::Client;
 use reqwest::Error;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::path::Path;
+
 
 pub struct TelegramBot {
     client: Client,
@@ -18,38 +20,43 @@ impl TelegramBot {
         }
     }
 
-    fn call_api<T: DeserializeOwned>(&self, api_function: &str, params: Form) -> Result<T, Error> {
-        let token = self.token.clone();
+    async fn call_api<T:DeserializeOwned>(&self, api_function: &str, params: Form) -> Result<T, Error> {
+        //let token = self.token.clone();
         self.client
             .post(&format!(
                 "https://api.telegram.org/bot{}/{}",
-                token, api_function
+                self.token, api_function
             ))
             .multipart(params)
-            .send()?
+            .send()
+            .await?
             .json()
+            .await
             .map_err(|e| Error::from(e))
+            
     }
 
-    pub fn get_sticker_pack(&self, pack_name: &str) -> Result<TelResponse<StickerSet>, Error> {
+    pub async fn get_sticker_pack(&self, pack_name: &str) -> Result<TelResponse<StickerSet>, Error> {
         let form = Form::new().text("name", pack_name.to_owned());
-        self.call_api("getStickerSet", form)
+        self.call_api("getStickerSet", form).await
     }
 
-    pub fn add_sticker_to_set(
+    pub async fn add_sticker_to_set(
         &self,
         user_id: &str,
         pack_name: &str,
         sticker_path: &Path,
         emojis: &str,
     ) -> Result<TelResponse<bool>, Error> {
+        let file_content = tokio::fs::read(sticker_path).await.unwrap();
+        let file_part = Part::bytes(file_content);
+
         let form = Form::new()
             .text("user_id", user_id.to_owned())
             .text("name", pack_name.to_owned())
-            .file("png_sticker", sticker_path)
-            .unwrap()
+            .part("png_sticker", file_part)
             .text("emojis", emojis.to_owned());
-        self.call_api("addStickerToSet", form)
+        self.call_api("addStickerToSet", form).await
     }
 }
 
