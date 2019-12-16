@@ -8,6 +8,7 @@ use std::path::Path;
 mod telegram_api;
 use dotenv::dotenv;
 use log::{info, error};
+use pretty_env_logger;
 
 #[derive(Deserialize, Clone)]
 struct StickerObj {
@@ -65,7 +66,8 @@ async fn add_file_to_pack(telegram: &telegram_api::TelegramBot, sticker_obj: Sti
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-
+    env::set_var("RUST_LOG", "info");
+    pretty_env_logger::init();
     let telegram_bot: telegram_api::TelegramBot =
         telegram_api::TelegramBot::new(&env::var("BOT_TOKEN").unwrap());
 

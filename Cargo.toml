@@ -14,3 +14,4 @@ reqwest = { version = "0.10.0-alpha.2", features = ["json"] }
 dotenv = "0.15.0"
 tokio = { version = "0.2.0-alpha.6"}
 log = "0.4.10"
+pretty_env_logger = "0.3.1"
