@@ -22,6 +22,8 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
+    - name: Chmod binary
+      run: chmod +x ./target/release/git_to_sticker
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1.0.1
