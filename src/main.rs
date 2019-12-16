@@ -7,6 +7,7 @@ use std::fs::File;
 use std::path::Path;
 mod telegram_api;
 use dotenv::dotenv;
+use log::{info, error};
 
 #[derive(Deserialize, Clone)]
 struct StickerObj {
@@ -44,11 +45,15 @@ fn parse_diff_from_repo(repo: &Repository) -> Result<Diff, GitError> {
 }
 
 fn parse_sticker_json() -> Result<StickersObj, JsonError> {
-    let sticker_file: File = File::open("stickers.json").unwrap();
+    let sticker_json_path = "stickers.json";
+    info!("Opening Sticker JSON at {}", sticker_json_path);
+    let sticker_file: File = File::open(sticker_json_path).unwrap();
     serde_json::from_reader(sticker_file)
 }
 
 async fn add_file_to_pack(telegram: &telegram_api::TelegramBot, sticker_obj: StickerObj, file_path: &Path) -> bool {
+    let pack_name = &env::var("PACK_NAME").unwrap();
+    info!("Adding {} to Sticker Pack {}", sticker_obj.file, pack_name);
     telegram.add_sticker_to_set(
         &env::var("USER_ID").unwrap(),
         &env::var("PACK_NAME").unwrap(),
@@ -68,19 +73,27 @@ async fn main() {
 
     let repo = Repository::open(".").unwrap();
 
+    info!("Checking for added png files");
     let diff: Diff = parse_diff_from_repo(&repo).unwrap();
 
     let stickers: StickersObj = parse_sticker_json().unwrap();
 
-    let pngs = diff
+    let pngs: Vec<DiffDelta> = diff
         .deltas()
-        .filter(|delta: &DiffDelta| file_is_png(delta.new_file()));
+        .filter(|delta: &DiffDelta| file_is_png(delta.new_file()))
+        .collect();
 
+    info!("{} new pngs found", pngs.len());
     for png in pngs {
         if png.status() == Delta::Added {
             let file_path: &Path = png.new_file().path().unwrap();
-            let _sticker: StickerObj = resolve_sticker_for_image(file_path, &stickers).unwrap();
-            add_file_to_pack(&telegram_bot, _sticker, file_path).await;
+            let _sticker: Option<StickerObj> = resolve_sticker_for_image(file_path, &stickers);
+            if _sticker.is_none() {
+                error!("{} not found in Stickers JSON", file_path.to_str().unwrap_or("NONE"));
+            }
+            else {
+                add_file_to_pack(&telegram_bot, _sticker.unwrap(), file_path).await;
+            }
         }
     }
 }
