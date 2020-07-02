@@ -24,7 +24,6 @@ impl TelegramBot {
         api_function: &str,
         params: Form,
     ) -> Result<T, Error> {
-        //let token = self.token.clone();
         self.client
             .post(&format!(
                 "https://api.telegram.org/bot{}/{}",
@@ -35,15 +34,6 @@ impl TelegramBot {
             .await?
             .json()
             .await
-            .map_err(|e| Error::from(e))
-    }
-
-    pub async fn get_sticker_pack(
-        &self,
-        pack_name: &str,
-    ) -> Result<TelResponse<StickerSet>, Error> {
-        let form = Form::new().text("name", pack_name.to_owned());
-        self.call_api("getStickerSet", form).await
     }
 
     pub async fn add_sticker_to_set(
