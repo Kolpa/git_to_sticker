@@ -7,7 +7,7 @@ use std::fs::File;
 use std::path::Path;
 mod telegram_api;
 use dotenv::dotenv;
-use log::{info, error};
+use log::{error, info};
 use pretty_env_logger;
 
 #[derive(Deserialize, Clone)]
@@ -52,15 +52,23 @@ fn parse_sticker_json() -> Result<StickersObj, JsonError> {
     serde_json::from_reader(sticker_file)
 }
 
-async fn add_file_to_pack(telegram: &telegram_api::TelegramBot, sticker_obj: StickerObj, file_path: &Path) -> bool {
+async fn add_file_to_pack(
+    telegram: &telegram_api::TelegramBot,
+    sticker_obj: StickerObj,
+    file_path: &Path,
+) -> bool {
     let pack_name = &env::var("PACK_NAME").unwrap();
     info!("Adding {} to Sticker Pack {}", sticker_obj.file, pack_name);
-    telegram.add_sticker_to_set(
-        &env::var("USER_ID").unwrap(),
-        &env::var("PACK_NAME").unwrap(),
-        file_path,
-        &sticker_obj.emoji
-    ).await.unwrap().ok
+    telegram
+        .add_sticker_to_set(
+            &env::var("USER_ID").unwrap(),
+            &env::var("PACK_NAME").unwrap(),
+            file_path,
+            &sticker_obj.emoji,
+        )
+        .await
+        .unwrap()
+        .ok
 }
 
 #[tokio::main]
@@ -91,9 +99,11 @@ async fn main() {
             let file_path: &Path = png.new_file().path().unwrap();
             let _sticker: Option<StickerObj> = resolve_sticker_for_image(file_path, &stickers);
             if _sticker.is_none() {
-                error!("{} not found in Stickers JSON", file_path.to_str().unwrap_or("NONE"));
-            }
-            else {
+                error!(
+                    "{} not found in Stickers JSON",
+                    file_path.to_str().unwrap_or("NONE")
+                );
+            } else {
                 add_file_to_pack(&telegram_bot, _sticker.unwrap(), file_path).await;
             }
         }

@@ -6,7 +6,6 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::path::Path;
 
-
 pub struct TelegramBot {
     client: Client,
     token: String,
@@ -20,7 +19,11 @@ impl TelegramBot {
         }
     }
 
-    async fn call_api<T:DeserializeOwned>(&self, api_function: &str, params: Form) -> Result<T, Error> {
+    async fn call_api<T: DeserializeOwned>(
+        &self,
+        api_function: &str,
+        params: Form,
+    ) -> Result<T, Error> {
         //let token = self.token.clone();
         self.client
             .post(&format!(
@@ -33,10 +36,12 @@ impl TelegramBot {
             .json()
             .await
             .map_err(|e| Error::from(e))
-            
     }
 
-    pub async fn get_sticker_pack(&self, pack_name: &str) -> Result<TelResponse<StickerSet>, Error> {
+    pub async fn get_sticker_pack(
+        &self,
+        pack_name: &str,
+    ) -> Result<TelResponse<StickerSet>, Error> {
         let form = Form::new().text("name", pack_name.to_owned());
         self.call_api("getStickerSet", form).await
     }
